@@ -1,16 +1,165 @@
 <html lang="ja">
 <head>
     <title>NKODICE Simulator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW"
+            crossorigin="anonymous"></script>
     <script src="nkodiceSimulator.js"></script>
     <script>
-        const s = new NkodiceSimulator(100);
-        for (let i = 0; i < 10; i++) {
-            const r = s.roll();
-
+        function sleep(millsec) {
+            return new Promise(r => setTimeout(r, millsec));
         }
+
+        onOcncn = async () => {
+            const peeRate = document.getElementById('peeRate').value;
+            if (peeRate >= 1000) {
+                console.error('can not simulate');
+                return;
+            }
+            const s = new NkodiceSimulator(peeRate);
+            const results = []
+            let result = null;
+            do {
+                result = s.roll();
+                results.push(result);
+            } while (result.words.filter(x => x === "おちんちん").length === 0)
+            renderSummary(results);
+            await renderResult(results);
+        }
+
+        function renderSummary(results) {
+            const summaryElem = document.getElementById('summary');
+            // clear summary
+            summaryElem.innerHTML = '';
+            const maxRoll = results.length;
+            const maxTR = document.createElement("tr");
+            maxTR.innerHTML = `<td>ロール回数</td><td>${maxRoll}</td>`
+            summaryElem.appendChild(maxTR);
+            const allScore = results.map(x => x.score).reduce((l, r) => {
+                return {
+                    U: l.U + r.U,
+                    M: l.M + r.M,
+                    C: l.C + r.C,
+                }
+            })
+            const scoreElem = document.getElementById('score');
+            // clear summary
+            scoreElem.innerHTML = '';
+            const UTR = document.createElement("tr");
+            UTR.innerHTML = `<td>スコアU</td><td>${allScore.U}</td>`
+            const MTR = document.createElement("tr");
+            MTR.innerHTML = `<td>スコアM</td><td>${allScore.M}</td>`
+            const CTR = document.createElement("tr");
+            CTR.innerHTML = `<td>スコアC</td><td>${allScore.C}</td>`
+            const ALLTR = document.createElement("tr");
+            ALLTR.innerHTML = `<td>スコア</td><td>${allScore.U + allScore.M + allScore.C}</td>`
+            scoreElem.append(UTR, MTR, CTR, ALLTR);
+
+            const wordsElem = document.getElementById('words');
+            // clear summary
+            wordsElem.innerHTML = '';
+            const words = results.map(x => x.words).reduce((l, r) => l.concat(r));
+            //console.log(words);
+            const untTR = document.createElement("tr");
+            untTR.innerHTML = `<td>UNCHI</td><td>${words.filter(x => x === "うんち").length}</td>`
+            const unkTR = document.createElement("tr");
+            unkTR.innerHTML = `<td>UNKO</td><td>${words.filter(x => x === "うんこ").length}</td>`
+            const mnkTR = document.createElement("tr");
+            mnkTR.innerHTML = `<td>MANKO</td><td>${words.filter(x => x === "まんこ").length}</td>`
+            const omnkTR = document.createElement("tr");
+            omnkTR.innerHTML = `<td>OMANKO</td><td>${words.filter(x => x === "おまんこ").length}</td>`
+            const tnkTR = document.createElement("tr");
+            tnkTR.innerHTML = `<td>CHINKO</td><td>${words.filter(x => x === "ちんこ").length}</td>`
+            const tntnTR = document.createElement("tr");
+            tntnTR.innerHTML = `<td>CHINCHIN</td><td>${words.filter(x => x === "ちんちん").length}</td>`
+            const otntnTR = document.createElement("tr");
+            otntnTR.innerHTML = `<td>OCHINCHIN</td><td>${words.filter(x => x === "おちんちん").length}</td>`
+            wordsElem.append(untTR, unkTR, mnkTR, omnkTR, tnkTR, tntnTR, otntnTR);
+        }
+
+        async function renderResult(results) {
+            const resultElem = document.getElementById('result');
+            resultElem.innerHTML = ""
+            const viewRate = document.getElementById('viewRate').value;
+            for (const r of results) {
+                const row = document.createElement('div');
+                row.className = ["row"];
+                row.style.marginBottom = "10px";
+                const col = document.createElement('div');
+                col.className = ["col"];
+                col.innerHTML = `
+                <div class="card">
+                    <h5 class="card-header">Roll ${r.rollCount}</h5>
+                    <div class="card-body">
+                        <p class="card-text">
+                            ${r.roll}
+                        </p>
+                    </div>
+                </div>`
+                row.appendChild(col);
+                //row.innerHTML = `${r.rollCount}<br/>${r.roll}<br/>`
+                resultElem.appendChild(row);
+                await sleep(viewRate);
+            }
+        }
+
     </script>
 </head>
 <body>
-
+<div class="container">
+    <h1>NKODICE Simulator</h1>
+    <div class="row">
+        <div class="col col-sm-5">
+            <!--<label>ArcadeMode</label><input type="checkbox" class="form-control"><br/>-->
+            <label>PeeRate</label><input type="number" value="100" id="peeRate" class="form-control"><br/>
+            <label>ViewRate</label><input type="number" value="0" id="viewRate" class="form-control"><br/>
+            <button onclick="onOcncn()" class="btn btn-primary">OCHINCHINがでるまで回す</button>
+        </div>
+        <div class="col col-sm-7">
+            <div class="card">
+                <h5 class="card-header">Summary</h5>
+                <div class="card-body">
+                    <h5 class="card-title">集計</h5>
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>項目</th>
+                            <th>値</th>
+                        </tr>
+                        </thead>
+                        <tbody id="summary">
+                        </tbody>
+                    </table>
+                    <h5 class="card-title">スコア</h5>
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>項目</th>
+                            <th>値</th>
+                        </tr>
+                        </thead>
+                        <tbody id="score">
+                        </tbody>
+                    </table>
+                    <h5 class="card-title">役</h5>
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>項目</th>
+                            <th>値</th>
+                        </tr>
+                        </thead>
+                        <tbody id="words">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <hr>
+    <div class="row" id="result"></div>
+</div>
 </body>
 </html>

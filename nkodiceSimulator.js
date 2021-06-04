@@ -7,19 +7,37 @@ class NkodiceSimulator {
         // init diceAmount
         this.diceAmount = 5;
         this.beforeResult = null;
+        this.currentRoll = 0;
         // arcade
         this.isArcade = isArcade;
         this.remainRoll = 3;
+        this.gameCount = 1;
     }
 
     roll() {
+        // arcade
+        if(this.isArcade) {
+            this.remainRoll -= 1;
+        }
+        this.currentRoll += 1;
         // roll dice and judge!
         const rollResult = this.rollDices(this.diceAmount);
         const result = this.judge(rollResult);
         this.beforeResult = result;
         this.diceAmount = this.nextDice(result);
-        console.log(result);
-        console.log(`next dice: ${this.diceAmount}`);
+        //console.log(result);
+        //console.log(`next dice: ${this.diceAmount}`);
+        if (this.isArcade) {
+            this.remainRoll = this.remainRoll + (result.words.length > 0)
+            result['isGameOver'] = this.remainRoll === 0;
+            if (this.remainRoll === 0) {
+                // game over!
+                console.log('game over!');
+                this.remainRoll = 3;
+                this.currentRoll = 0;
+                this.gameCount += 1;
+            }
+        }
         return result;
     }
 
@@ -70,6 +88,7 @@ class NkodiceSimulator {
             thisTimeComboSnap["うんこ"] = "うんこ" in comboSnap ? comboSnap.うんこ + 1 : 1;
         }
         return {
+            "rollCount": this.currentRoll,
             "roll": rollResult,
             "combo": thisTimeComboSnap,
             "words": wordsJudge,
